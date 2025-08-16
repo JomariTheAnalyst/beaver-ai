@@ -3,11 +3,11 @@
 ## 🚀 Phase 1: Core Platform (MVP)
 
 ### 🔐 Authentication & User Management
-- [ ] Setup Clerk authentication with Next.js 14
-- [ ] Implement user registration and login flows
+- [x] Setup Clerk authentication with Next.js 14
+- [x] Implement user registration and login flows
 - [ ] Create user profile management
-- [ ] Setup protected routes and middleware
-- [ ] Add session management and persistence
+- [x] Setup protected routes and middleware
+- [x] Add session management and persistence
 
 ### 🗄️ Database & Schema Design
 - [ ] Setup Prisma with PostgreSQL
