@@ -3,25 +3,8 @@
 @import 'tailwindcss/utilities';
 
 @layer base {
-  * {
-    @apply border-border;
-  }
   body {
-    @apply bg-background text-foreground;
-  }
-  
-  :root {
-    /* Dark theme colors */
-    --dark-bg: #0a0e27;
-    --dark-card: #1a1f3a;
-    --dark-border: #2d3748;
-    --dark-text: #e2e8f0;
-    --dark-muted: #a0aec0;
-    
-    /* Accent colors */
-    --accent-blue: #3b82f6;
-    --accent-purple: #8b5cf6;
-    --accent-glow: #60a5fa;
+    @apply bg-dark-bg text-dark-text;
   }
 }
 
@@ -42,38 +25,6 @@
   
   .loading-dots {
     @apply flex items-center justify-center space-x-1;
-  }
-  
-  .text-accent-blue {
-    color: var(--accent-blue);
-  }
-  
-  .text-accent-purple {
-    color: var(--accent-purple);
-  }
-  
-  .text-accent-glow {
-    color: var(--accent-glow);
-  }
-  
-  .bg-dark-bg {
-    background-color: var(--dark-bg);
-  }
-  
-  .bg-dark-card {
-    background-color: var(--dark-card);
-  }
-  
-  .border-dark-border {
-    border-color: var(--dark-border);
-  }
-  
-  .text-dark-text {
-    color: var(--dark-text);
-  }
-  
-  .text-dark-muted {
-    color: var(--dark-muted);
   }
 }
 
@@ -126,14 +77,14 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--dark-bg);
+  background: #0f172a;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--dark-border);
+  background: #334155;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-blue);
+  background: #3b82f6;
 }
