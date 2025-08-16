@@ -86,7 +86,7 @@ router.post('/task', async (req, res) => {
       });
     }
 
-    const context = { projectId, userId };
+    const context = { projectId, userId, timestamp: new Date() };
     const result = await orchestrator.executeTask(agentType, taskType, input, context);
 
     res.json({
