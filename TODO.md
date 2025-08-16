@@ -48,17 +48,17 @@
 - [ ] Setup WebSocket for real-time updates
 
 ### 🎨 Core UI Components
-- [ ] Setup Next.js 14 with TypeScript
-- [ ] Configure TailwindCSS v3 and shadcn/ui
-- [ ] Create base layout and routing structure
-- [ ] Implement authentication UI components
+- [x] Setup Next.js 14 with TypeScript
+- [x] Configure TailwindCSS v3 and shadcn/ui
+- [x] Create base layout and routing structure
+- [x] Implement authentication UI components
 - [ ] Design and build core components:
   - [ ] Chat interface with streaming support
   - [ ] File explorer component
   - [ ] Code preview and syntax highlighting
   - [ ] Logs and terminal output panel
   - [ ] Live preview iframe container
-- [ ] Add responsive design and mobile support
+- [x] Add responsive design and mobile support
 
 ### 💬 Chat Interface
 - [ ] Implement real-time chat with Planner Agent
