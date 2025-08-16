@@ -10,14 +10,14 @@
 - [x] Add session management and persistence
 
 ### 🗄️ Database & Schema Design
-- [ ] Setup Prisma with PostgreSQL
-- [ ] Design core database schemas:
-  - [ ] Users and profiles
-  - [ ] Projects and project metadata
-  - [ ] Agent conversations and history
-  - [ ] Sandbox environments and files
-  - [ ] Agent activities and logs
-- [ ] Implement database migrations
+- [x] Setup Prisma with PostgreSQL
+- [x] Design core database schemas:
+  - [x] Users and profiles
+  - [x] Projects and project metadata
+  - [x] Agent conversations and history
+  - [x] Sandbox environments and files
+  - [x] Agent activities and logs
+- [x] Implement database migrations
 - [ ] Setup database seeding for development
 
 ### 🤖 AI Agent Core System
