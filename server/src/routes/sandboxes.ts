@@ -99,7 +99,7 @@ router.post('/:sandboxId/files', async (req, res) => {
 router.get('/:sandboxId/files/*', async (req, res) => {
   try {
     const { sandboxId } = req.params;
-    const filePath = '/' + req.params[0]; // Get the full path after /files/
+    const filePath = '/' + (req.params as any)[0]; // Get the full path after /files/
 
     const content = await sandboxManager.readFile(sandboxId, filePath);
 
