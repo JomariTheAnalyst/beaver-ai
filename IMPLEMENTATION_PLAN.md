@@ -1,4 +1,4 @@
-# Yawascript Implementation Plan
+# Beaver AI Implementation Plan
 
 ## 🎯 Overview
 
