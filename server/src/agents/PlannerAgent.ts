@@ -34,6 +34,7 @@ interface ProjectBlueprint {
 export class PlannerAgent extends Agent {
   private conversationHistory: AgentMessage[];
   private currentRequirements?: Partial<ProjectRequirements>;
+  private aiService: AIService;
 
   constructor() {
     super(AgentType.PLANNER, [
@@ -44,6 +45,7 @@ export class PlannerAgent extends Agent {
       'blueprint_creation'
     ]);
     this.conversationHistory = [];
+    this.aiService = new AIService();
   }
 
   async processMessage(message: AgentMessage, context?: any): Promise<AgentResponse> {
