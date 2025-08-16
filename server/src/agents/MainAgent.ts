@@ -421,7 +421,9 @@ This involves multiple steps that will be executed in parallel where possible. I
   }
 
   private getAgentPriority(agentType: AgentType): number {
-    const priorities = {
+    const priorities: Record<string, number> = {
+      [AgentType.PLANNER]: 1,
+      [AgentType.MAIN]: 1,
       [AgentType.BACKEND]: 1,
       [AgentType.DATA_LOGIC]: 1,
       [AgentType.FRONTEND]: 2,
