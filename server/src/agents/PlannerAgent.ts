@@ -1,5 +1,6 @@
 import { Agent, AgentType, AgentMessage, AgentTask, TaskResult, AgentResponse, TaskStatus } from './base/Agent';
 import { logger } from '../utils/logger';
+import { AIService } from '../services/AIService';
 
 interface ProjectRequirements {
   projectName: string;
