@@ -1,30 +1,86 @@
 import express from 'express';
 import { logger } from '../utils/logger';
+import prisma from '../lib/prisma';
+import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
+import { MessageRole } from '@prisma/client';
+import { AgentOrchestrator } from '../services/AgentOrchestrator';
 
 const router = express.Router();
 
-// Create new conversation
-router.post('/', async (req, res) => {
-  try {
-    const { userId, projectId, title } = req.body;
+// Apply authentication to all routes
+router.use(authenticateToken);
 
-    if (!userId) {
-      return res.status(400).json({
-        error: 'userId is required'
-      });
+// Create new conversation
+router.post('/', async (req: AuthenticatedRequest, res) => {
+  try {
+    const { projectId, title, initialMessage } = req.body;
+
+    const user = await prisma.user.findUnique({
+      where: { clerkId: req.clerkId! }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
     }
 
-    const conversation = {
-      id: `conv_${Date.now()}`,
-      userId,
-      projectId,
-      title: title || 'New Conversation',
-      messages: [],
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
+    // Verify project ownership if projectId is provided
+    if (projectId) {
+      const project = await prisma.project.findFirst({
+        where: { 
+          id: projectId,
+          userId: user.id 
+        }
+      });
 
-    logger.info(`Conversation created: ${conversation.id} for user ${userId}`);
+      if (!project) {
+        return res.status(404).json({ error: 'Project not found' });
+      }
+    }
+
+    const conversation = await prisma.conversation.create({
+      data: {
+        userId: user.id,
+        projectId,
+        title: title || 'New Conversation'
+      }
+    });
+
+    // If there's an initial message, add it and get AI response
+    if (initialMessage) {
+      const userMessage = await prisma.message.create({
+        data: {
+          conversationId: conversation.id,
+          content: initialMessage,
+          role: MessageRole.USER
+        }
+      });
+
+      // Get AI response via Agent Orchestrator
+      try {
+        const orchestrator = new AgentOrchestrator();
+        const aiResponse = await orchestrator.processMessage(initialMessage, {
+          conversationId: conversation.id,
+          projectId,
+          userId: user.id
+        });
+
+        if (aiResponse) {
+          await prisma.message.create({
+            data: {
+              conversationId: conversation.id,
+              content: aiResponse.content,
+              role: MessageRole.ASSISTANT,
+              agentType: aiResponse.agentType || 'planner'
+            }
+          });
+        }
+      } catch (aiError) {
+        logger.error('Error getting AI response:', aiError);
+        // Continue without AI response for now
+      }
+    }
+
+    logger.info(`Conversation created: ${conversation.id} for user ${user.id}`);
 
     res.status(201).json({
       success: true,
@@ -40,33 +96,34 @@ router.post('/', async (req, res) => {
 });
 
 // Get user conversations
-router.get('/user/:userId', async (req, res) => {
+router.get('/', async (req: AuthenticatedRequest, res) => {
   try {
-    const { userId } = req.params;
+    const { projectId } = req.query;
 
-    // Mock conversations data
-    const conversations = [
-      {
-        id: 'conv_1',
-        userId,
-        projectId: 'project_1',
-        title: 'Task Management App Planning',
-        messageCount: 15,
-        lastMessage: 'Great! The project structure looks good.',
-        createdAt: new Date(Date.now() - 86400000),
-        updatedAt: new Date()
+    const user = await prisma.user.findUnique({
+      where: { clerkId: req.clerkId! }
+    });
+
+    if (!user) {
+      return res.json({ success: true, conversations: [] });
+    }
+
+    const conversations = await prisma.conversation.findMany({
+      where: { 
+        userId: user.id,
+        ...(projectId && { projectId: projectId as string })
       },
-      {
-        id: 'conv_2',
-        userId,
-        projectId: 'project_2',
-        title: 'E-commerce Platform Discussion',
-        messageCount: 8,
-        lastMessage: 'Let me create the blueprint for your e-commerce platform.',
-        createdAt: new Date(Date.now() - 172800000),
-        updatedAt: new Date(Date.now() - 3600000)
-      }
-    ];
+      include: {
+        messages: {
+          take: 1,
+          orderBy: { createdAt: 'desc' }
+        },
+        _count: {
+          select: { messages: true }
+        }
+      },
+      orderBy: { updatedAt: 'desc' }
+    });
 
     res.json({
       success: true,
@@ -82,34 +139,34 @@ router.get('/user/:userId', async (req, res) => {
 });
 
 // Get specific conversation with messages
-router.get('/:conversationId', async (req, res) => {
+router.get('/:conversationId', async (req: AuthenticatedRequest, res) => {
   try {
     const { conversationId } = req.params;
 
-    // Mock conversation with messages
-    const conversation = {
-      id: conversationId,
-      userId: 'user_123',
-      projectId: 'project_1',
-      title: 'Task Management App Planning',
-      messages: [
-        {
-          id: 'msg_1',
-          content: 'I want to build a task management app with real-time collaboration.',
-          role: 'user',
-          createdAt: new Date(Date.now() - 7200000)
+    const user = await prisma.user.findUnique({
+      where: { clerkId: req.clerkId! }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const conversation = await prisma.conversation.findFirst({
+      where: { 
+        id: conversationId,
+        userId: user.id 
+      },
+      include: {
+        messages: {
+          orderBy: { createdAt: 'asc' }
         },
-        {
-          id: 'msg_2',
-          content: 'Great! I understand you want to build a task management app with real-time collaboration. Let me ask a few questions to better understand your vision...',
-          role: 'assistant',
-          agentType: 'planner',
-          createdAt: new Date(Date.now() - 7180000)
-        }
-      ],
-      createdAt: new Date(Date.now() - 86400000),
-      updatedAt: new Date()
-    };
+        project: true
+      }
+    });
+
+    if (!conversation) {
+      return res.status(404).json({ error: 'Conversation not found' });
+    }
 
     res.json({
       success: true,
@@ -125,26 +182,84 @@ router.get('/:conversationId', async (req, res) => {
 });
 
 // Add message to conversation
-router.post('/:conversationId/messages', async (req, res) => {
+router.post('/:conversationId/messages', async (req: AuthenticatedRequest, res) => {
   try {
     const { conversationId } = req.params;
-    const { content, role = 'user', agentType } = req.body;
+    const { content, role = MessageRole.USER } = req.body;
 
     if (!content) {
       return res.status(400).json({
-        error: 'content is required'
+        error: 'Message content is required'
       });
     }
 
-    const message = {
-      id: `msg_${Date.now()}`,
-      content,
-      role,
-      agentType,
-      createdAt: new Date()
-    };
+    const user = await prisma.user.findUnique({
+      where: { clerkId: req.clerkId! }
+    });
 
-    logger.info(`Message added to conversation ${conversationId}: ${content.substring(0, 100)}...`);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const conversation = await prisma.conversation.findFirst({
+      where: { 
+        id: conversationId,
+        userId: user.id 
+      },
+      include: { project: true }
+    });
+
+    if (!conversation) {
+      return res.status(404).json({ error: 'Conversation not found' });
+    }
+
+    // Create user message
+    const message = await prisma.message.create({
+      data: {
+        conversationId,
+        content,
+        role
+      }
+    });
+
+    // Update conversation timestamp
+    await prisma.conversation.update({
+      where: { id: conversationId },
+      data: { updatedAt: new Date() }
+    });
+
+    // Get AI response if it's a user message
+    if (role === MessageRole.USER) {
+      try {
+        const orchestrator = new AgentOrchestrator();
+        const aiResponse = await orchestrator.processMessage(content, {
+          conversationId,
+          projectId: conversation.projectId,
+          userId: user.id
+        });
+
+        if (aiResponse) {
+          const aiMessage = await prisma.message.create({
+            data: {
+              conversationId,
+              content: aiResponse.content,
+              role: MessageRole.ASSISTANT,
+              agentType: aiResponse.agentType || 'planner'
+            }
+          });
+
+          res.status(201).json({
+            success: true,
+            messages: [message, aiMessage]
+          });
+          return;
+        }
+      } catch (aiError) {
+        logger.error('Error getting AI response:', aiError);
+      }
+    }
+
+    logger.info(`Message added to conversation ${conversationId}`);
 
     res.status(201).json({
       success: true,
@@ -160,11 +275,33 @@ router.post('/:conversationId/messages', async (req, res) => {
 });
 
 // Delete conversation
-router.delete('/:conversationId', async (req, res) => {
+router.delete('/:conversationId', async (req: AuthenticatedRequest, res) => {
   try {
     const { conversationId } = req.params;
 
-    // Here you would delete the conversation from the database
+    const user = await prisma.user.findUnique({
+      where: { clerkId: req.clerkId! }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const conversation = await prisma.conversation.findFirst({
+      where: { 
+        id: conversationId,
+        userId: user.id 
+      }
+    });
+
+    if (!conversation) {
+      return res.status(404).json({ error: 'Conversation not found' });
+    }
+
+    await prisma.conversation.delete({
+      where: { id: conversationId }
+    });
+
     logger.info(`Conversation ${conversationId} deleted`);
 
     res.json({

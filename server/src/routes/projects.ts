@@ -1,32 +1,56 @@
 import express from 'express';
 import { logger } from '../utils/logger';
+import prisma from '../lib/prisma';
+import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
+import { ProjectStatus } from '@prisma/client';
 
 const router = express.Router();
 
-// Create new project
-router.post('/', async (req, res) => {
-  try {
-    const { name, description, userId } = req.body;
+// Apply authentication to all routes
+router.use(authenticateToken);
 
-    if (!name || !userId) {
+// Create new project
+router.post('/', async (req: AuthenticatedRequest, res) => {
+  try {
+    const { name, description } = req.body;
+
+    if (!name) {
       return res.status(400).json({
-        error: 'Name and userId are required'
+        error: 'Project name is required'
       });
     }
 
-    // Here you would create a project in the database
-    // For now, we'll return a mock project
-    const project = {
-      id: `project_${Date.now()}`,
-      name,
-      description,
-      userId,
-      status: 'planning',
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
+    // Ensure user exists
+    let user = await prisma.user.findUnique({
+      where: { clerkId: req.clerkId! }
+    });
 
-    logger.info(`Project created: ${project.id} by user ${userId}`);
+    if (!user) {
+      // Create user if doesn't exist
+      user = await prisma.user.create({
+        data: {
+          clerkId: req.clerkId!,
+          email: `dev-${req.clerkId}@example.com`, // Mock email for dev
+          name: 'Development User'
+        }
+      });
+      logger.info(`Created new user: ${user.id}`);
+    }
+
+    const project = await prisma.project.create({
+      data: {
+        name,
+        description,
+        userId: user.id,
+        status: ProjectStatus.PLANNING,
+        metadata: {
+          createdBy: 'user',
+          version: '1.0.0'
+        }
+      }
+    });
+
+    logger.info(`Project created: ${project.id} by user ${user.id}`);
 
     res.status(201).json({
       success: true,
@@ -42,34 +66,22 @@ router.post('/', async (req, res) => {
 });
 
 // Get user projects
-router.get('/user/:userId', async (req, res) => {
+router.get('/', async (req: AuthenticatedRequest, res) => {
   try {
-    const { userId } = req.params;
-
-    // Mock projects data
-    const projects = [
-      {
-        id: 'project_1',
-        name: 'Task Management App',
-        description: 'A collaborative task management application',
-        status: 'development',
-        createdAt: new Date(Date.now() - 86400000), // 1 day ago
-        updatedAt: new Date()
-      },
-      {
-        id: 'project_2',
-        name: 'E-commerce Platform',
-        description: 'Modern e-commerce solution with AI features',
-        status: 'planning',
-        createdAt: new Date(Date.now() - 172800000), // 2 days ago
-        updatedAt: new Date()
-      }
-    ];
-
-    res.json({
-      success: true,
-      projects
+    const user = await prisma.user.findUnique({
+      where: { clerkId: req.clerkId! }
     });
+
+    if (!user) {
+      return res.json({ success: true, projects: [] });
+    }
+
+    const projects = await prisma.project.findMany({
+      where: { userId: user.id },
+      orderBy: { updatedAt: 'desc' }
+    });
+
+    res.json(projects);
 
   } catch (error) {
     logger.error('Error getting user projects:', error);
@@ -80,31 +92,41 @@ router.get('/user/:userId', async (req, res) => {
 });
 
 // Get specific project
-router.get('/:projectId', async (req, res) => {
+router.get('/:projectId', async (req: AuthenticatedRequest, res) => {
   try {
     const { projectId } = req.params;
 
-    // Mock project data
-    const project = {
-      id: projectId,
-      name: 'Task Management App',
-      description: 'A collaborative task management application',
-      status: 'development',
-      blueprint: {
-        requirements: {
-          projectName: 'Task Management App',
-          description: 'A collaborative task management application',
-          features: ['user authentication', 'real-time collaboration', 'task organization']
-        },
-        architecture: {
-          frontend: ['Next.js', 'TypeScript', 'TailwindCSS'],
-          backend: ['Express.js', 'Socket.io'],
-          database: ['PostgreSQL']
-        }
+    const user = await prisma.user.findUnique({
+      where: { clerkId: req.clerkId! }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const project = await prisma.project.findFirst({
+      where: { 
+        id: projectId,
+        userId: user.id 
       },
-      createdAt: new Date(Date.now() - 86400000),
-      updatedAt: new Date()
-    };
+      include: {
+        conversations: {
+          take: 1,
+          orderBy: { updatedAt: 'desc' }
+        },
+        _count: {
+          select: {
+            files: true,
+            conversations: true,
+            sandboxes: true
+          }
+        }
+      }
+    });
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
 
     res.json({
       success: true,
@@ -120,17 +142,46 @@ router.get('/:projectId', async (req, res) => {
 });
 
 // Update project
-router.put('/:projectId', async (req, res) => {
+router.put('/:projectId', async (req: AuthenticatedRequest, res) => {
   try {
     const { projectId } = req.params;
-    const updates = req.body;
+    const { name, description, status, metadata } = req.body;
 
-    // Here you would update the project in the database
-    logger.info(`Project ${projectId} updated with:`, updates);
+    const user = await prisma.user.findUnique({
+      where: { clerkId: req.clerkId! }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const project = await prisma.project.findFirst({
+      where: { 
+        id: projectId,
+        userId: user.id 
+      }
+    });
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const updatedProject = await prisma.project.update({
+      where: { id: projectId },
+      data: {
+        ...(name && { name }),
+        ...(description && { description }),
+        ...(status && { status }),
+        ...(metadata && { metadata }),
+        updatedAt: new Date()
+      }
+    });
+
+    logger.info(`Project ${projectId} updated`);
 
     res.json({
       success: true,
-      message: 'Project updated successfully'
+      project: updatedProject
     });
 
   } catch (error) {
@@ -142,11 +193,33 @@ router.put('/:projectId', async (req, res) => {
 });
 
 // Delete project
-router.delete('/:projectId', async (req, res) => {
+router.delete('/:projectId', async (req: AuthenticatedRequest, res) => {
   try {
     const { projectId } = req.params;
 
-    // Here you would delete the project from the database
+    const user = await prisma.user.findUnique({
+      where: { clerkId: req.clerkId! }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const project = await prisma.project.findFirst({
+      where: { 
+        id: projectId,
+        userId: user.id 
+      }
+    });
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    await prisma.project.delete({
+      where: { id: projectId }
+    });
+
     logger.info(`Project ${projectId} deleted`);
 
     res.json({
