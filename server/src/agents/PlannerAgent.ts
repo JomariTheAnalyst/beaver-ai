@@ -106,24 +106,33 @@ export class PlannerAgent extends Agent {
     return this.capabilities;
   }
 
-  private determineConversationStage(): string {
-    if (this.conversationHistory.length <= 1) {
-      return 'initial';
-    }
+  private shouldCreateBlueprint(aiResponseContent: string): boolean {
+    // Check if AI response indicates readiness to create blueprint
+    const blueprintIndicators = [
+      'ready to start building',
+      'create a blueprint',
+      'comprehensive plan',
+      'begin development',
+      'start the project'
+    ];
 
-    if (!this.currentRequirements?.projectName) {
-      return 'initial';
-    }
+    const hasIndicators = blueprintIndicators.some(indicator => 
+      aiResponseContent.toLowerCase().includes(indicator)
+    );
 
-    if (!this.currentRequirements?.features || this.currentRequirements.features.length === 0) {
-      return 'clarification';
-    }
+    // Also check if we have minimum requirements
+    const hasMinRequirements = this.currentRequirements?.projectName && 
+                              this.currentRequirements?.features && 
+                              this.currentRequirements.features.length > 0;
 
-    if (!this.currentRequirements?.technicalRequirements) {
-      return 'refinement';
-    }
+    return hasIndicators || (hasMinRequirements && this.conversationHistory.length >= 4);
+  }
 
-    return 'blueprint';
+  private determineResponseStatus(content: string): 'thinking' | 'working' | 'completed' | 'error' {
+    if (content.includes('questions') || content.includes('understand')) return 'thinking';
+    if (content.includes('analyzing') || content.includes('processing')) return 'working';
+    if (content.includes('ready') || content.includes('blueprint')) return 'completed';
+    return 'thinking';
   }
 
   private async handleInitialRequirement(message: AgentMessage): Promise<AgentResponse> {
