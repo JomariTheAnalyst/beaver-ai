@@ -1,4 +1,4 @@
-# Yawascript 🚀
+# Beaver AI🚀
 
 > *The Future of AI-Native Development*
 
