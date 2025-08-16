@@ -1,4 +1,4 @@
-# Yawascript - Product Requirements Document (PRD)
+# Beaver AI - Product Requirements Document (PRD)
 
 ## Product Overview
 
