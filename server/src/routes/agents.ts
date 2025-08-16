@@ -115,7 +115,7 @@ router.get('/conversation/:conversationId', async (req, res) => {
       });
     }
 
-    const history = await orchestrator.getConversationHistory(conversationId, userId as string);
+    const history = orchestrator.getConversationHistory(conversationId, userId as string);
 
     res.json({
       success: true,
