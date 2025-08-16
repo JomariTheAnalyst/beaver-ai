@@ -19,6 +19,12 @@ import conversationRoutes from './routes/conversations';
 // Import socket handlers
 import { initializeSocketHandlers } from './sockets/socketHandlers';
 
+// Import agents and services
+import { AgentOrchestrator } from './services/AgentOrchestrator';
+import { SandboxManager } from './services/SandboxManager';
+import { PlannerAgent } from './agents/PlannerAgent';
+import { MainAgent } from './agents/MainAgent';
+
 // Load environment variables
 dotenv.config();
 
