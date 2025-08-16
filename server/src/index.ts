@@ -31,6 +31,21 @@ dotenv.config();
 const app = express();
 const server = createServer(app);
 
+// Initialize services and agents
+const sandboxManager = new SandboxManager();
+const orchestrator = new AgentOrchestrator();
+
+// Create and register agents
+const plannerAgent = new PlannerAgent();
+const mainAgent = new MainAgent(sandboxManager);
+
+orchestrator.registerAgent(plannerAgent);
+orchestrator.registerAgent(mainAgent);
+
+// Make orchestrator available globally for routes
+app.set('orchestrator', orchestrator);
+app.set('sandboxManager', sandboxManager);
+
 // Initialize Socket.IO
 const io = new Server(server, {
   cors: {
