@@ -194,7 +194,11 @@
   
   .template-image {
     @apply w-full h-32 object-cover rounded-lg mb-4 
-           transition-all duration-300 group-hover:scale-105;
+           transition-all duration-300;
+  }
+  
+  .template-card:hover .template-image {
+    @apply scale-105;
   }
   
   /* Cloud Background */
