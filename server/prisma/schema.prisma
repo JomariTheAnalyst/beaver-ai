@@ -6,12 +6,12 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   clerkId   String   @unique
   email     String   @unique
   name      String?
@@ -21,16 +21,14 @@ model User {
   
   projects      Project[]
   conversations Conversation[]
-  
-  @@map("users")
 }
 
 model Project {
-  id          String        @id @default(uuid())
+  id          String        @id @default(cuid())
   name        String
   description String?
   status      ProjectStatus @default(PLANNING)
-  metadata    Json?
+  metadata    String?       // JSON string for SQLite
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   
@@ -40,12 +38,10 @@ model Project {
   conversations Conversation[]
   sandboxes     Sandbox[]
   files         ProjectFile[]
-  
-  @@map("projects")
 }
 
 model Conversation {
-  id        String    @id @default(uuid())
+  id        String    @id @default(cuid())
   title     String?
   messages  Message[]
   createdAt DateTime  @default(now())
@@ -56,30 +52,27 @@ model Conversation {
   
   projectId String?
   project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  
-  @@map("conversations")
 }
 
 model Message {
-  id        String      @id @default(uuid())
+  id        String      @id @default(cuid())
   content   String
   role      MessageRole
   agentType String?
-  metadata  Json?
+  metadata  String?     // JSON string for SQLite
+  images    String?     // JSON array of image URLs
   createdAt DateTime    @default(now())
   
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  
-  @@map("messages")
 }
 
 model Sandbox {
-  id         String        @id @default(uuid())
+  id         String        @id @default(cuid())
   e2bId      String        @unique
   status     SandboxStatus @default(CREATING)
   previewUrl String?
-  metadata   Json?
+  metadata   String?       // JSON string for SQLite
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
   
@@ -88,12 +81,10 @@ model Sandbox {
   
   files SandboxFile[]
   logs  SandboxLog[]
-  
-  @@map("sandboxes")
 }
 
 model ProjectFile {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   path      String
   content   String?
   size      Int?
@@ -103,13 +94,10 @@ model ProjectFile {
   
   projectId String
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  
-  @@unique([projectId, path])
-  @@map("project_files")
 }
 
 model SandboxFile {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   path      String
   content   String?
   size      Int?
@@ -119,39 +107,47 @@ model SandboxFile {
   
   sandboxId String
   sandbox   Sandbox @relation(fields: [sandboxId], references: [id], onDelete: Cascade)
-  
-  @@unique([sandboxId, path])
-  @@map("sandbox_files")
 }
 
 model SandboxLog {
-  id        String     @id @default(uuid())
+  id        String     @id @default(cuid())
   type      LogType
   message   String
   level     LogLevel   @default(INFO)
-  metadata  Json?
+  metadata  String?    // JSON string for SQLite
   createdAt DateTime   @default(now())
   
   sandboxId String
   sandbox   Sandbox @relation(fields: [sandboxId], references: [id], onDelete: Cascade)
-  
-  @@map("sandbox_logs")
 }
 
 model AgentActivity {
-  id        String           @id @default(uuid())
+  id        String           @id @default(cuid())
   agentType String
   action    String
   status    ActivityStatus
-  input     Json?
-  output    Json?
+  input     String?          // JSON string for SQLite
+  output    String?          // JSON string for SQLite
   error     String?
   duration  Int?            // in milliseconds
   createdAt DateTime        @default(now())
   
   projectId String?
-  
-  @@map("agent_activities")
+}
+
+model ProjectTemplate {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  techStack   String   // JSON array as string
+  prompt      String   // The detailed prompt to insert
+  imageUrl    String?
+  category    String
+  tags        String   // JSON array as string
+  featured    Boolean  @default(false)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 enum ProjectStatus {
