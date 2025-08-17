@@ -6,19 +6,19 @@ import { Bot, Code, Zap, Sparkles, ArrowRight, Github, Twitter } from 'lucide-re
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-dark-bg via-dark-card to-dark-bg">
+    <div className="min-h-screen bg-gradient-to-br from-beaver-900 via-beaver-800 to-beaver-900">
       {/* Navigation */}
-      <nav className="flex items-center justify-between p-6 border-b border-dark-border/30">
+      <nav className="flex items-center justify-between p-6 border-b border-beaver-700/30">
         <motion.div 
           className="flex items-center space-x-3"
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <div className="w-10 h-10 bg-gradient-to-br from-accent-blue to-accent-purple rounded-lg flex items-center justify-center">
-            <Bot className="w-6 h-6 text-white" />
+          <div className="w-10 h-10 bg-gradient-to-br from-beaver-700 to-beaver-500 rounded-lg flex items-center justify-center">
+            <Bot className="w-6 h-6 text-beaver-300" />
           </div>
-          <span className="text-2xl font-bold bg-gradient-to-r from-accent-blue to-accent-purple bg-clip-text text-transparent">
+          <span className="text-2xl font-bold bg-gradient-to-r from-beaver-500 to-beaver-300 bg-clip-text text-transparent">
             Beaver AI
           </span>
         </motion.div>
@@ -30,7 +30,7 @@ export default function LandingPage() {
           transition={{ duration: 0.5, delay: 0.1 }}
         >
           <SignInButton mode="modal">
-            <button className="px-4 py-2 text-dark-text hover:text-accent-blue transition-colors">
+            <button className="px-4 py-2 text-beaver-300 hover:text-beaver-500 transition-colors">
               Sign In
             </button>
           </SignInButton>
