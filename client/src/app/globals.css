@@ -185,7 +185,11 @@
   
   /* Project Template Cards */
   .template-card {
-    @apply card-material-hover p-6 group cursor-pointer;
+    @apply card-material-hover p-6 cursor-pointer;
+  }
+  
+  .template-card:hover {
+    @apply scale-[1.02] -translate-y-1;
   }
   
   .template-image {
