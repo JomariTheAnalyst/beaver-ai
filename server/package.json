@@ -12,6 +12,7 @@
     "db:studio": "npx prisma studio"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@prisma/client": "^5.7.1",
     "axios": "^1.11.0",
     "bcryptjs": "^2.4.3",
@@ -24,6 +25,7 @@
     "morgan": "^1.10.0",
     "prisma": "^5.7.1",
     "socket.io": "^4.7.5",
+    "sqlite3": "^5.1.7",
     "uuid": "^9.0.1",
     "winston": "^3.11.0"
   },
