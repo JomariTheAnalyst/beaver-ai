@@ -4,15 +4,15 @@
 
 @layer base {
   body {
-    @apply bg-dark-bg text-dark-text;
+    @apply bg-beaver-900 text-beaver-300;
   }
 }
 
 @layer components {
   .btn-futuristic {
-    @apply px-6 py-3 bg-gradient-to-r from-accent-blue to-accent-purple text-white font-medium rounded-lg 
-           hover:from-accent-blue/90 hover:to-accent-purple/90 transition-all duration-300 
-           border border-transparent hover:border-accent-blue/30 hover:shadow-lg hover:shadow-accent-blue/20;
+    @apply px-6 py-3 bg-gradient-to-r from-beaver-700 to-beaver-500 text-beaver-300 font-medium rounded-lg 
+           hover:from-beaver-700/90 hover:to-beaver-500/90 transition-all duration-300 
+           border border-transparent hover:border-beaver-500/30 hover:shadow-lg hover:shadow-beaver-500/20;
   }
   
   .vibe-glow {
@@ -20,11 +20,56 @@
   }
   
   .vibe-glow-static {
-    @apply hover:shadow-lg hover:shadow-accent-blue/10;
+    @apply hover:shadow-lg hover:shadow-beaver-500/10;
+  }
+  
+  .glimmer-border {
+    position: relative;
+    border: 2px solid transparent;
+    background: linear-gradient(45deg, #526D82, #9DB2BF) padding-box,
+                linear-gradient(45deg, #9DB2BF, #DDE6ED, #9DB2BF) border-box;
+  }
+  
+  .glimmer-effect {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .glimmer-effect::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -200%;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(221, 230, 237, 0.3),
+      transparent
+    );
+    animation: glimmer 2s infinite;
   }
   
   .loading-dots {
     @apply flex items-center justify-center space-x-1;
+  }
+
+  .chat-container {
+    @apply bg-gradient-to-br from-beaver-700/20 to-beaver-500/10 
+           border-2 border-transparent rounded-xl backdrop-blur-sm;
+    background-image: linear-gradient(45deg, rgba(82, 109, 130, 0.1), rgba(157, 178, 191, 0.05)),
+                      linear-gradient(45deg, #9DB2BF, #DDE6ED, #9DB2BF);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+  }
+
+  .template-card {
+    @apply bg-gradient-to-br from-beaver-700/30 to-beaver-500/20 
+           border border-beaver-500/20 rounded-xl backdrop-blur-sm
+           hover:border-beaver-500/40 transition-all duration-300
+           transform hover:scale-105 hover:shadow-xl hover:shadow-beaver-500/20;
+    background-image: linear-gradient(135deg, rgba(82, 109, 130, 0.2), rgba(157, 178, 191, 0.1));
   }
 }
 
@@ -46,10 +91,19 @@
 
 @keyframes glow {
   from {
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 0 20px rgba(157, 178, 191, 0.3);
   }
   to {
-    box-shadow: 0 0 30px rgba(59, 130, 246, 0.6);
+    box-shadow: 0 0 30px rgba(221, 230, 237, 0.6);
+  }
+}
+
+@keyframes glimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
   }
 }
 
@@ -77,14 +131,23 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: #27374D;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #526D82;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3b82f6;
+  background: #9DB2BF;
+}
+
+/* 3D Transform utilities */
+.transform-3d {
+  transform-style: preserve-3d;
+}
+
+.perspective {
+  perspective: 1000px;
 }
