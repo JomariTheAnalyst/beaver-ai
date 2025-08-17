@@ -249,7 +249,7 @@ export class E2BSandboxService {
   }
 
   private generatePackageJson(projectTemplate: any): any {
-    const basePackage = {
+    const basePackage: any = {
       name: projectTemplate.title.toLowerCase().replace(/\s+/g, '-'),
       version: '1.0.0',
       description: projectTemplate.description,
