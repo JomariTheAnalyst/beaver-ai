@@ -1,177 +1,220 @@
 import express from 'express';
-import { PlannerAgent } from '../agents/PlannerAgent';
-import { MainAgent } from '../agents/MainAgent';
-import { SandboxManager } from '../services/SandboxManager';
-import { AgentOrchestrator } from '../services/AgentOrchestrator';
-import { logger } from '../utils/logger';
+import { PrismaClient } from '@prisma/client';
+import AIService from '../services/AIService';
 
 const router = express.Router();
 
-// Initialize agents and services
-const sandboxManager = new SandboxManager();
-const plannerAgent = new PlannerAgent();
-const mainAgent = new MainAgent(sandboxManager);
-const orchestrator = new AgentOrchestrator();
-
-// Register agents with orchestrator
-orchestrator.registerAgent(plannerAgent);
-orchestrator.registerAgent(mainAgent);
-
-// Start conversation with Planner Agent
+// Chat with AI agent
 router.post('/chat', async (req, res) => {
   try {
-    const { message, projectId, userId, conversationId } = req.body;
+    const { messages, projectContext, agentType = 'planner' } = req.body;
+    const aiService: AIService = req.app.locals.aiService;
+    const prisma: PrismaClient = req.app.locals.prisma;
 
-    if (!message || !userId) {
-      return res.status(400).json({
-        error: 'Message and userId are required'
-      });
+    if (!messages || !Array.isArray(messages)) {
+      return res.status(400).json({ error: 'Invalid messages format' });
     }
 
-    const context = {
-      projectId,
-      userId,
-      conversationId,
-      timestamp: new Date()
-    };
+    // Process the chat message
+    const response = await aiService.processChatMessage(messages, projectContext);
 
-    const response = await orchestrator.processMessage(message, context);
-
-    res.json({
-      success: true,
-      response,
-      context: {
-        projectId: context.projectId,
-        conversationId: context.conversationId
+    // Log agent activity
+    await prisma.agentActivity.create({
+      data: {
+        agentType: response.agentType,
+        action: 'chat_response',
+        status: 'COMPLETED',
+        input: JSON.stringify({ messages, projectContext }),
+        output: JSON.stringify(response),
+        duration: 0, // We could measure this
       }
     });
 
+    res.json(response);
   } catch (error) {
-    logger.error('Error in agent chat:', error);
-    res.status(500).json({
-      error: 'Failed to process message',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    });
+    console.error('Error in agent chat:', error);
+    res.status(500).json({ error: 'Failed to process chat message' });
   }
 });
 
-// Get agent status
-router.get('/status', async (req, res) => {
+// Generate code with AI agent
+router.post('/generate-code', async (req, res) => {
   try {
-    const { projectId } = req.query;
+    const { prompt, techStack, projectContext } = req.body;
+    const aiService: AIService = req.app.locals.aiService;
+    const prisma: PrismaClient = req.app.locals.prisma;
 
-    const status = orchestrator.getSystemStatus(projectId as string);
-
-    res.json({
-      success: true,
-      status
-    });
-
-  } catch (error) {
-    logger.error('Error getting agent status:', error);
-    res.status(500).json({
-      error: 'Failed to get agent status'
-    });
-  }
-});
-
-// Execute specific agent task
-router.post('/task', async (req, res) => {
-  try {
-    const { agentType, taskType, input, projectId, userId } = req.body;
-
-    if (!agentType || !taskType || !userId) {
-      return res.status(400).json({
-        error: 'agentType, taskType, and userId are required'
-      });
+    if (!prompt) {
+      return res.status(400).json({ error: 'Prompt is required' });
     }
 
-    const context = { projectId, userId, timestamp: new Date() };
-    const result = await orchestrator.executeTask(agentType, taskType, input, context);
+    const startTime = Date.now();
+    const response = await aiService.generateCode(prompt, techStack || [], projectContext);
+    const duration = Date.now() - startTime;
 
-    res.json({
-      success: true,
-      result
+    // Log agent activity
+    await prisma.agentActivity.create({
+      data: {
+        agentType: 'developer',
+        action: 'code_generation',
+        status: 'COMPLETED',
+        input: JSON.stringify({ prompt, techStack, projectContext }),
+        output: JSON.stringify(response),
+        duration,
+      }
     });
 
+    res.json(response);
   } catch (error) {
-    logger.error('Error executing agent task:', error);
-    res.status(500).json({
-      error: 'Failed to execute task',
-      details: error instanceof Error ? error.message : 'Unknown error'
+    console.error('Error generating code:', error);
+    
+    // Log failed activity
+    const prisma: PrismaClient = req.app.locals.prisma;
+    await prisma.agentActivity.create({
+      data: {
+        agentType: 'developer',
+        action: 'code_generation',
+        status: 'FAILED',
+        error: error.message,
+        duration: 0,
+      }
     });
+
+    res.status(500).json({ error: 'Failed to generate code' });
   }
 });
 
-// Get conversation history
-router.get('/conversation/:conversationId', async (req, res) => {
+// Optimize code with AI agent
+router.post('/optimize-code', async (req, res) => {
   try {
-    const { conversationId } = req.params;
-    const { userId } = req.query;
+    const { code, language } = req.body;
+    const aiService: AIService = req.app.locals.aiService;
+    const prisma: PrismaClient = req.app.locals.prisma;
 
-    if (!userId) {
-      return res.status(400).json({
-        error: 'userId is required'
-      });
+    if (!code) {
+      return res.status(400).json({ error: 'Code is required' });
     }
 
-    const history = orchestrator.getConversationHistory(conversationId, userId as string);
+    const startTime = Date.now();
+    const response = await aiService.optimizeCode(code, language || 'javascript');
+    const duration = Date.now() - startTime;
 
-    res.json({
-      success: true,
-      history
+    // Log agent activity
+    await prisma.agentActivity.create({
+      data: {
+        agentType: 'optimizer',
+        action: 'code_optimization',
+        status: 'COMPLETED',
+        input: JSON.stringify({ code, language }),
+        output: JSON.stringify(response),
+        duration,
+      }
     });
 
+    res.json(response);
   } catch (error) {
-    logger.error('Error getting conversation history:', error);
-    res.status(500).json({
-      error: 'Failed to get conversation history'
-    });
+    console.error('Error optimizing code:', error);
+    res.status(500).json({ error: 'Failed to optimize code' });
   }
 });
 
-// Stream agent response (for real-time updates)
-router.get('/stream/:projectId', async (req, res) => {
+// Analyze images
+router.post('/analyze-images', async (req, res) => {
   try {
-    const { projectId } = req.params;
-    const { userId } = req.query;
+    const { images } = req.body;
+    const aiService: AIService = req.app.locals.aiService;
 
-    if (!userId) {
-      return res.status(400).json({
-        error: 'userId is required'
-      });
+    if (!images || !Array.isArray(images)) {
+      return res.status(400).json({ error: 'Images array is required' });
     }
 
-    // Set up Server-Sent Events
-    res.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'Cache-Control'
+    const analyses = await aiService.analyzeImages(images);
+
+    res.json({
+      analyses,
+      count: images.length
     });
-
-    // Send initial connection message
-    res.write(`data: ${JSON.stringify({ type: 'connected', projectId })}\n\n`);
-
-    // Set up streaming for this project
-    const streamHandler = (data: any) => {
-      res.write(`data: ${JSON.stringify(data)}\n\n`);
-    };
-
-    orchestrator.addStreamListener(projectId, streamHandler);
-
-    // Clean up on client disconnect
-    req.on('close', () => {
-      orchestrator.removeStreamListener(projectId, streamHandler);
-      res.end();
-    });
-
   } catch (error) {
-    logger.error('Error setting up agent stream:', error);
-    res.status(500).json({
-      error: 'Failed to set up stream'
+    console.error('Error analyzing images:', error);
+    res.status(500).json({ error: 'Failed to analyze images' });
+  }
+});
+
+// Get agent activity logs
+router.get('/activity', async (req, res) => {
+  try {
+    const prisma: PrismaClient = req.app.locals.prisma;
+    const { agentType, limit = 50, offset = 0 } = req.query;
+
+    const where = agentType ? { agentType: agentType as string } : {};
+
+    const activities = await prisma.agentActivity.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: parseInt(limit as string),
+      skip: parseInt(offset as string),
     });
+
+    const total = await prisma.agentActivity.count({ where });
+
+    res.json({
+      activities,
+      pagination: {
+        total,
+        limit: parseInt(limit as string),
+        offset: parseInt(offset as string),
+        hasMore: total > parseInt(offset as string) + parseInt(limit as string)
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching agent activity:', error);
+    res.status(500).json({ error: 'Failed to fetch agent activity' });
+  }
+});
+
+// Get agent performance metrics
+router.get('/metrics', async (req, res) => {
+  try {
+    const prisma: PrismaClient = req.app.locals.prisma;
+    
+    // Get activity counts by agent type
+    const agentCounts = await prisma.agentActivity.groupBy({
+      by: ['agentType'],
+      _count: {
+        agentType: true
+      }
+    });
+
+    // Get success/failure rates
+    const statusCounts = await prisma.agentActivity.groupBy({
+      by: ['status'],
+      _count: {
+        status: true
+      }
+    });
+
+    // Get average response times
+    const avgDurations = await prisma.agentActivity.groupBy({
+      by: ['agentType'],
+      _avg: {
+        duration: true
+      },
+      where: {
+        duration: {
+          gt: 0
+        }
+      }
+    });
+
+    res.json({
+      agentActivity: agentCounts,
+      statusDistribution: statusCounts,
+      averageResponseTimes: avgDurations,
+      generatedAt: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error fetching agent metrics:', error);
+    res.status(500).json({ error: 'Failed to fetch agent metrics' });
   }
 });
 
