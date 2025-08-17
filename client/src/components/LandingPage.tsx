@@ -55,20 +55,20 @@ export default function LandingPage() {
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 1, delay: 0.2 }}
-              className="inline-flex items-center space-x-2 bg-dark-card/50 border border-accent-blue/30 rounded-full px-4 py-2 mb-6"
+              className="inline-flex items-center space-x-2 bg-beaver-700/20 border border-beaver-500/30 rounded-full px-4 py-2 mb-6"
             >
-              <Sparkles className="w-4 h-4 text-accent-blue" />
-              <span className="text-sm text-accent-blue font-medium">The Future of AI-Native Development</span>
+              <Sparkles className="w-4 h-4 text-beaver-500" />
+              <span className="text-sm text-beaver-500 font-medium">The Future of AI-Native Development</span>
             </motion.div>
 
-            <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight text-beaver-300">
               Transform Ideas into{' '}
-              <span className="bg-gradient-to-r from-accent-blue via-accent-purple to-accent-glow bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-beaver-500 via-beaver-300 to-beaver-300 bg-clip-text text-transparent">
                 Web Applications
               </span>
             </h1>
             
-            <p className="text-xl text-dark-muted mb-8 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-xl text-beaver-500 mb-8 max-w-3xl mx-auto leading-relaxed">
               No coding required. Just describe your vision and watch our AI agents collaborate 
               to build, test, and deploy fully functional applications in real-time.
             </p>
