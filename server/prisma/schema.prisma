@@ -24,13 +24,13 @@ model User {
 }
 
 model Project {
-  id          String        @id @default(cuid())
+  id          String   @id @default(cuid())
   name        String
   description String?
-  status      ProjectStatus @default(PLANNING)
-  metadata    String?       // JSON string for SQLite
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  status      String   @default("PLANNING") // PLANNING, DEVELOPMENT, TESTING, COMPLETED, DEPLOYED, ERROR
+  metadata    String?  // JSON string for SQLite
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
   
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -55,26 +55,26 @@ model Conversation {
 }
 
 model Message {
-  id        String      @id @default(cuid())
+  id        String   @id @default(cuid())
   content   String
-  role      MessageRole
+  role      String   // USER, ASSISTANT, SYSTEM
   agentType String?
-  metadata  String?     // JSON string for SQLite
-  images    String?     // JSON array of image URLs
-  createdAt DateTime    @default(now())
+  metadata  String?  // JSON string for SQLite
+  images    String?  // JSON array of image URLs
+  createdAt DateTime @default(now())
   
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 }
 
 model Sandbox {
-  id         String        @id @default(cuid())
-  e2bId      String        @unique
-  status     SandboxStatus @default(CREATING)
+  id         String   @id @default(cuid())
+  e2bId      String   @unique
+  status     String   @default("CREATING") // CREATING, ACTIVE, STOPPED, ERROR
   previewUrl String?
-  metadata   String?       // JSON string for SQLite
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
+  metadata   String?  // JSON string for SQLite
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now())
   
   projectId String
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -90,7 +90,7 @@ model ProjectFile {
   size      Int?
   mimeType  String?
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime @default(now())
   
   projectId String
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -103,34 +103,34 @@ model SandboxFile {
   size      Int?
   mimeType  String?
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime @default(now())
   
   sandboxId String
   sandbox   Sandbox @relation(fields: [sandboxId], references: [id], onDelete: Cascade)
 }
 
 model SandboxLog {
-  id        String     @id @default(cuid())
-  type      LogType
+  id        String   @id @default(cuid())
+  type      String   // COMMAND, OUTPUT, ERROR, SYSTEM
   message   String
-  level     LogLevel   @default(INFO)
-  metadata  String?    // JSON string for SQLite
-  createdAt DateTime   @default(now())
+  level     String   @default("INFO") // DEBUG, INFO, WARN, ERROR
+  metadata  String?  // JSON string for SQLite
+  createdAt DateTime @default(now())
   
   sandboxId String
   sandbox   Sandbox @relation(fields: [sandboxId], references: [id], onDelete: Cascade)
 }
 
 model AgentActivity {
-  id        String           @id @default(cuid())
+  id        String   @id @default(cuid())
   agentType String
   action    String
-  status    ActivityStatus
-  input     String?          // JSON string for SQLite
-  output    String?          // JSON string for SQLite
+  status    String   // PENDING, RUNNING, COMPLETED, FAILED
+  input     String?  // JSON string for SQLite
+  output    String?  // JSON string for SQLite
   error     String?
-  duration  Int?            // in milliseconds
-  createdAt DateTime        @default(now())
+  duration  Int?     // in milliseconds
+  createdAt DateTime @default(now())
   
   projectId String?
 }
@@ -147,48 +147,5 @@ model ProjectTemplate {
   featured    Boolean  @default(false)
   order       Int      @default(0)
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-enum ProjectStatus {
-  PLANNING
-  DEVELOPMENT
-  TESTING
-  COMPLETED
-  DEPLOYED
-  ERROR
-}
-
-enum MessageRole {
-  USER
-  ASSISTANT
-  SYSTEM
-}
-
-enum SandboxStatus {
-  CREATING
-  ACTIVE
-  STOPPED
-  ERROR
-}
-
-enum LogType {
-  COMMAND
-  OUTPUT
-  ERROR
-  SYSTEM
-}
-
-enum LogLevel {
-  DEBUG
-  INFO
-  WARN
-  ERROR
-}
-
-enum ActivityStatus {
-  PENDING
-  RUNNING
-  COMPLETED
-  FAILED
+  updatedAt   DateTime @default(now())
 }

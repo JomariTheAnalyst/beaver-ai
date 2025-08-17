@@ -24,13 +24,13 @@ model User {
 }
 
 model Project {
-  id          String        @id @default(cuid())
+  id          String   @id @default(cuid())
   name        String
   description String?
-  status      ProjectStatus @default(PLANNING)
-  metadata    String?       // JSON string
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  status      String   @default("PLANNING") // PLANNING, DEVELOPMENT, TESTING, COMPLETED, DEPLOYED
+  metadata    String?  // JSON string
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
   
   userId      String
   user        User     @relation(fields: [userId], references: [id])
@@ -54,11 +54,12 @@ model Conversation {
 }
 
 model Message {
-  id        String      @id @default(cuid())
+  id        String   @id @default(cuid())
   content   String
-  role      MessageRole
-  metadata  String?     // JSON string
-  createdAt DateTime    @default(now())
+  role      String   // USER, ASSISTANT, SYSTEM
+  metadata  String?  // JSON string
+  images    String?  // JSON array of image URLs
+  createdAt DateTime @default(now())
   
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id])
@@ -77,18 +78,4 @@ model ProjectTemplate {
   order       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-}
-
-enum ProjectStatus {
-  PLANNING
-  DEVELOPMENT
-  TESTING
-  COMPLETED
-  DEPLOYED
-}
-
-enum MessageRole {
-  USER
-  ASSISTANT
-  SYSTEM
 }
